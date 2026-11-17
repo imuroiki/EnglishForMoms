@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is There a Bank Near Here?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a street-sign themed workbook — one column of numbered exercise "blocks", each a sign-green header plate over a sidewalk-grey panel; the town map is the centrepiece. */
+:root{
+  --bg:#eef1ee;
+  --panel:#ffffff;
+  --ink:#1d2421;
+  --muted:#5b6661;
+  --line:#d3dad6;
+  --sign:#0d6b4f;
+  --sign-ink:#ffffff;
+  --accent:#f2b705;
+  --accent-ink:#1d2421;
+  --bs:#1f4fa3;
+  --tr:#c22b2b;
+  --good:#1f8a4c;
+  --bad:#c0392b;
+  --asphalt:#4a514e;
+  --walk:#c9d0cc;
+  --b-civic:#cfe0f5;
+  --b-shop:#f6e3c4;
+  --b-move:#e3dcef;
+  --b-green:#bfe3b4;
+  --b-stroke:#7c8781;
+  --note:#fff8de;
+  --font-display:"Overpass","Arial Narrow",Arial,sans-serif;
+  --font-body:"Atkinson Hyperlegible",Verdana,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121715; --panel:#1b2220; --ink:#e8eeeb; --muted:#9aa6a0; --line:#2f3935;
+    --sign:#1c8a67; --sign-ink:#ffffff; --accent:#f2c230; --accent-ink:#141a17;
+    --bs:#3d6fd1; --tr:#d04444; --good:#4cc27e; --bad:#ef6b5b;
+    --asphalt:#2b3230; --walk:#3d4744;
+    --b-civic:#2c4566; --b-shop:#5a4a2c; --b-move:#463d5a; --b-green:#2f5a33; --b-stroke:#7d8a84;
+    --note:#2a2a1c;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121715; --panel:#1b2220; --ink:#e8eeeb; --muted:#9aa6a0; --line:#2f3935;
+  --sign:#1c8a67; --sign-ink:#ffffff; --accent:#f2c230; --accent-ink:#141a17;
+  --bs:#3d6fd1; --tr:#d04444; --good:#4cc27e; --bad:#ef6b5b;
+  --asphalt:#2b3230; --walk:#3d4744;
+  --b-civic:#2c4566; --b-shop:#5a4a2c; --b-move:#463d5a; --b-green:#2f5a33; --b-stroke:#7d8a84;
+  --note:#2a2a1c;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0}
+h3{font-size:19px}
+button,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px 64px}
+
+/* header */
+.top{background:var(--sign);color:var(--sign-ink);border-bottom:6px solid var(--accent)}
+.top .wrap{padding-top:28px;padding-bottom:22px;display:grid;gap:14px}
+.top .unit{font-family:var(--font-display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;opacity:.85}
+.top h1{font-size:clamp(28px,5vw,44px);font-weight:800;line-height:1.1}
+.top .note{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:var(--sign-ink);max-width:680px}
+.top .note .trbtn{color:var(--sign-ink);border-color:rgba(255,255,255,.5)}
+.langbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.langbar span{font-size:14px;opacity:.9;margin-right:4px}
+.langbtn{border:2px solid rgba(255,255,255,.6);background:transparent;color:var(--sign-ink);padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:700;font-size:15px}
+.langbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+nav.jump{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 6px}
+nav.jump a{font-size:14px;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--panel);padding:5px 12px;border-radius:6px}
+nav.jump a:hover{border-color:var(--sign)}
+
+/* section blocks */
+section.block{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;scroll-margin-top:12px}
+.plate{display:flex;align-items:flex-start;gap:12px;background:var(--sign);color:var(--sign-ink);padding:10px 16px;width:100%;border:0;text-align:left;cursor:pointer}
+.plate .num{font-family:var(--font-display);font-weight:800;background:var(--sign-ink);color:var(--sign);min-width:30px;height:30px;padding:0 6px;border-radius:6px;display:grid;place-items:center;flex:none}
+.plate h2{font-size:21px;font-weight:800;letter-spacing:.01em;padding-top:2px}
+.plate h2::after{content:" ⇄";font-weight:400;font-size:15px;opacity:.75}
+.plate .ptitle{display:grid;gap:4px}
+.plate .out{display:none;flex-direction:column;gap:2px;font-size:15px;padding-bottom:2px}
+.plate.open .out{display:flex}
+.body{padding:18px 16px 22px;display:grid;gap:18px}
+.sub{display:grid;gap:12px}
+
+/* translation lines */
+.trline{display:flex;gap:8px;align-items:baseline}
+.tag{font-family:var(--font-display);font-weight:800;font-size:11px;letter-spacing:.06em;padding:1px 6px;border-radius:4px;color:#fff;flex:none}
+.tag.bs{background:var(--bs)} .tag.tr{background:var(--tr)}
+body[data-lang="bs"] .trline.tr, body[data-lang="tr"] .trline.bs{display:none}
+body[data-lang="bs"] .lbl-tr, body[data-lang="tr"] .lbl-bs, body[data-lang="bs"] .lbl-dot, body[data-lang="tr"] .lbl-dot{display:none}
+
+/* translatable chip */
+.tx{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;cursor:pointer;transition:border-color .15s}
+.tx:hover{border-color:var(--sign)}
+.tx .en{font-weight:700}
+.tx .en::after{content:" ⇄";font-weight:400;color:var(--muted);font-size:13px}
+.tx.open{border-color:var(--sign);background:var(--panel)}
+.tx .out{display:none;gap:3px;flex-direction:column;font-size:15px}
+.tx.open .out{display:flex}
+
+/* translatable instruction / explanation */
+.note{display:grid;gap:6px;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--note);border-radius:8px;padding:10px 12px}
+.note .en{margin:0}
+.note .out{display:none;flex-direction:column;gap:4px;font-size:15px}
+.note.open .out{display:flex}
+.trbtn{justify-self:start;border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
+.trbtn:hover{border-color:var(--sign);color:var(--ink)}
+.explain{display:grid;gap:10px;border:2px solid var(--accent);border-radius:10px;padding:14px;background:var(--panel)}
+.explain-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.explain-head h3{font-size:18px}
+.explain .note{border-left-width:4px;background:var(--bg)}
+.explain .note .en b{color:var(--sign)}
+
+/* places grid */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cards .tx{width:100%}
+.cards .pic{font-size:26px;line-height:1}
+
+/* prepositions */
+.preps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.prep{display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);align-content:start}
+.prep svg{width:100%;height:auto;max-height:90px}
+.prep .tx{width:100%;background:var(--panel)}
+.box-t{fill:var(--bs);opacity:.85}
+.box-o{fill:var(--panel);stroke:var(--b-stroke);stroke-width:2}
+.arrow{stroke:var(--tr);stroke-width:3;fill:none}
+.arrowhead{fill:var(--tr)}
+
+/* phrases + dialogue */
+.phrases{display:flex;flex-wrap:wrap;gap:10px}
+.dialog{display:grid;gap:8px}
+.dline{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
+.dline > b{font-family:var(--font-display);padding-top:8px;color:var(--muted);font-size:15px}
+.turns{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.turn{display:grid;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);align-content:start}
+.turn svg{width:100%;height:90px}
+.turn .tx{width:100%;background:var(--panel)}
+.road{fill:var(--walk)}
+.bigarrow{fill:none;stroke:var(--bad);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.bigarrowhead{fill:var(--bad)}
+
+/* gap-fill dialogue */
+.gline{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.gline > b{font-family:var(--font-display);color:var(--muted);font-size:15px;padding-top:4px}
+.gtext{display:grid;gap:6px}
+.gtext .line{line-height:2.2}
+.gtext .out{display:none;flex-direction:column;gap:3px;font-size:15px}
+.gtext.open .out{display:flex}
+select.gapsel{border:2px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 6px;font-weight:700;margin:0 2px}
+select.gapsel.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 15%,var(--panel))}
+select.gapsel.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--panel))}
+.fix{color:var(--good);font-weight:700;font-size:14px;margin-left:2px}
+
+/* map */
+.mapbox{overflow-x:auto;border-radius:8px;border:1px solid var(--line);background:var(--walk)}
+.mapbox svg{display:block;width:100%;min-width:620px;height:auto}
+.m-asphalt{fill:var(--asphalt)}
+.m-walk{fill:var(--walk)}
+.m-dash{stroke:#e9e4c8;stroke-width:2;stroke-dasharray:10 10;opacity:.6}
+.m-road-label{fill:#f4f4f4;font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.05em}
+.bld{stroke:var(--b-stroke);stroke-width:1.5;transition:stroke .2s, stroke-width .2s}
+.bld.civic{fill:var(--b-civic)} .bld.shop{fill:var(--b-shop)} .bld.move{fill:var(--b-move)} .bld.green{fill:var(--b-green)}
+.blabel{fill:var(--ink);font-family:var(--font-body);font-weight:700;font-size:13px;pointer-events:none}
+.bicon{font-size:20px;pointer-events:none}
+.bgroup.clickable{cursor:pointer}
+.bgroup.clickable:hover .bld{stroke:var(--sign);stroke-width:3}
+.bgroup.hl .bld{stroke:var(--accent);stroke-width:5}
+.bgroup.ok .bld,.bgroup.clickable.ok:hover .bld{stroke:var(--good);stroke-width:6}
+.bgroup.no .bld,.bgroup.clickable.no:hover .bld{stroke:var(--bad);stroke-width:6}
+.you circle{fill:var(--accent);stroke:#1d2421;stroke-width:2}
+.you text{font-family:var(--font-display);font-weight:800;font-size:12px;fill:#1d2421}
+.route{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 14}
+@media (prefers-reduced-motion:no-preference){
+  .route.draw{animation:dash 1.6s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-32}}
+}
+
+/* quiz */
+.qcard{display:grid;gap:12px;border:2px solid var(--line);border-radius:10px;padding:14px;background:var(--bg)}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.qnum{font-family:var(--font-display);font-weight:800;color:var(--muted);font-size:14px;letter-spacing:.05em;text-transform:uppercase}
+.score{font-family:var(--font-display);font-weight:800;background:var(--sign);color:var(--sign-ink);padding:3px 10px;border-radius:6px;font-variant-numeric:tabular-nums}
+.qtext{font-size:20px;font-weight:700}
+.gap{display:inline-block;min-width:110px;border-bottom:3px solid var(--accent);text-align:center;padding:0 4px}
+.bigpic{font-size:64px;line-height:1}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts.stack{flex-direction:column;align-items:stretch}
+.opt{border:2px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700;text-align:left}
+.opt:hover:not(:disabled){border-color:var(--sign)}
+.opt.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--panel))}
+.opt.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--panel))}
+.opt:disabled{cursor:default}
+.feedback{display:grid;gap:2px;min-height:1.5em}
+.feedback .msg{font-weight:700}
+.feedback.ok .msg{color:var(--good)} .feedback.no .msg{color:var(--bad)}
+.feedback .trline{font-size:14px;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:none;background:var(--sign);color:var(--sign-ink);padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.steps{display:flex;flex-wrap:wrap;gap:8px}
+.steps .tx{background:var(--panel)}
+.done{padding:14px;border-radius:8px;background:color-mix(in srgb,var(--good) 14%,var(--panel));display:grid;gap:4px}
+.done .msg{font-weight:700;font-size:19px}
+.after{display:flex;flex-wrap:wrap;gap:8px}
+
+/* word order */
+.built{min-height:52px;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:2px dashed var(--line);border-radius:8px;background:var(--panel)}
+.built.ok{border-color:var(--good);border-style:solid}
+.built.no{border-color:var(--bad);border-style:solid}
+.pool{display:flex;flex-wrap:wrap;gap:6px}
+.word{border:2px solid var(--line);background:var(--panel);border-radius:6px;padding:5px 11px;cursor:pointer;font-weight:700}
+.word:hover:not(:disabled){border-color:var(--sign)}
+.word.used{visibility:hidden}
+.built .word{background:var(--note)}
+
+/* in/at/on sorter */
+.sorter{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
+.srow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
+.srow .choices{display:flex;gap:4px}
+.srow .choices .opt{padding:4px 10px}
+.srow .phrase{font-weight:700}
+.srow .out{grid-column:1 / -1;display:none;flex-direction:column;gap:2px;font-size:14px}
+.srow.answered .out{display:flex}
+.tally{font-family:var(--font-display);font-weight:800}
+
+/* your turn */
+.yt{display:grid;gap:10px}
+.yt label{font-weight:700}
+.yt select{border:2px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 10px;max-width:280px}
+.yt textarea{width:100%;min-height:110px;border:2px solid var(--line);border-radius:8px;padding:10px;background:var(--panel);resize:vertical}
+.wordbank{display:flex;flex-wrap:wrap;gap:6px}
+.wordbank span{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:15px}
+
+footer{margin-top:32px;color:var(--muted);font-size:14px}
+@media (max-width:560px){
+  .dline,.gline{grid-template-columns:1fr}
+  .dline > b,.gline > b{padding-top:0}
+}
+</style>
+</head>
+<body data-lang="both">
+
+<header class="top">
+  <div class="wrap">
+    <div class="unit">Unit 9 · Revision</div>
+    <h1>Is there a bank near here?</h1>
+    <div id="intro"></div>
+    <div class="langbar" role="group" aria-label="Translation language">
+      <span>Translations:</span>
+      <button class="langbtn" data-lang="bs" aria-pressed="false">Bosanski</button>
+      <button class="langbtn" data-lang="tr" aria-pressed="false">Türkçe</button>
+      <button class="langbtn" data-lang="both" aria-pressed="true">Both / Oba / İkisi</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <nav class="jump" aria-label="Sections" id="jump"></nav>
+</main>
+<div class="wrap"><footer>Revision for Unit 9 (9A, 9B and Practical English). The map is an invented town for practice.</footer></div>
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+const PLACES = [
+  ["🚉","train station","željeznička stanica","tren istasyonu"],
+  ["🚌","bus station","autobuska stanica","otogar"],
+  ["🏛️","museum","muzej","müze"],
+  ["🌳","park","park","park"],
+  ["🏦","bank","banka","banka"],
+  ["🏋️","gym","teretana","spor salonu"],
+  ["💊","pharmacy","apoteka","eczane"],
+  ["🏫","school","škola","okul"],
+  ["📮","post office","pošta","postane"],
+  ["🛒","supermarket","supermarket","süpermarket"],
+  ["📚","bookstore","knjižara","kitapçı"],
+  ["🅿️","parking lot","parking","otopark"],
+  ["🏥","hospital","bolnica","hastane"],
+  ["🏨","hotel","hotel","otel"],
+  ["🎬","movie theater","kino","sinema"],
+  ["⛽","gas station","benzinska pumpa","benzin istasyonu"],
+  ["🍽️","restaurant","restoran","restoran"],
+  ["☕","café","kafić","kafe"],
+  ["✈️","airport","aerodrom","havalimanı"],
+  ["🏖️","beach","plaža","plaj"],
+  ["🚦","traffic lights","semafor","trafik ışıkları"],
+  ["🛣️","street / avenue","ulica / avenija","sokak / cadde"]
+];
+
+const HOTEL = [
+  ["🛋️","armchair","fotelja","koltuk"],
+  ["⏰","alarm clock","budilnik","çalar saat"],
+  ["🪟","curtains","zavjese","perdeler"],
+  ["🚪","door","vrata","kapı"],
+  ["🚿","shower","tuš","duş"],
+  ["📺","TV","televizor","televizyon"],
+  ["☎️","phone","telefon","telefon"],
+  ["🛏️","bed","krevet","yatak"],
+  ["💡","lamp","lampa","lamba"],
+  ["🧺","towel","peškir","havlu"],
+  ["🔑","key","ključ","anahtar"],
+  ["🛁","bathroom","kupatilo","banyo"],
+  ["🪑","chair","stolica","sandalye"],
+  ["🖼️","window","prozor","pencere"]
+];
+
+const PREPS = [
+  {en:"next to", bs:"pored", tr:"yanında", ex:["The bank is next to the post office.","Banka je pored pošte.","Banka, postanenin yanında."], draw:"next"},
+  {en:"across from", bs:"preko puta", tr:"karşısında", ex:["The hotel is across from the museum.","Hotel je preko puta muzeja.","Otel, müzenin karşısında."], draw:"across"},
+  {en:"between", bs:"između", tr:"arasında", ex:["The post office is between the bank and the gym.","Pošta je između banke i teretane.","Postane, banka ile spor salonunun arasında."], draw:"between"},
+  {en:"on the corner", bs:"na uglu", tr:"köşede", ex:["The café is on the corner.","Kafić je na uglu.","Kafe köşede."], draw:"corner"},
+  {en:"in", bs:"u", tr:"içinde", ex:["The ball is in the box.","Lopta je u kutiji.","Top kutunun içinde."], draw:"in"},
+  {en:"on", bs:"na", tr:"üstünde", ex:["The remote control is on the TV.","Daljinski je na televizoru.","Kumanda televizyonun üstünde."], draw:"on"},
+  {en:"under", bs:"ispod", tr:"altında", ex:["The remote control is under the bed.","Daljinski je ispod kreveta.","Kumanda yatağın altında."], draw:"under"},
+  {en:"near", bs:"blizu", tr:"yakınında", ex:["Is there a bank near here?","Ima li banka ovdje blizu?","Buraya yakın bir banka var mı?"], draw:"near"}
+];
+
+const TURNS = [
+  {en:"Go straight ahead.", bs:"Idite pravo.", tr:"Düz gidin.", d:"M50 85 L50 18", h:"M50 6 L40 22 L60 22 Z"},
+  {en:"Turn right.", bs:"Skrenite desno.", tr:"Sağa dönün.", d:"M50 85 L50 45 L80 45", h:"M92 45 L76 35 L76 55 Z"},
+  {en:"Turn left.", bs:"Skrenite lijevo.", tr:"Sola dönün.", d:"M50 85 L50 45 L20 45", h:"M8 45 L24 35 L24 55 Z"},
+  {en:"It's on the right.", bs:"Nalazi se s desne strane.", tr:"Sağ tarafta.", side:"right"},
+  {en:"It's on the left.", bs:"Nalazi se s lijeve strane.", tr:"Sol tarafta.", side:"left"}
+];
+
+const PHRASES = [
+  ["Excuse me.","Izvinite.","Affedersiniz."],
+  ["Can you help me?","Možete li mi pomoći?","Bana yardım edebilir misiniz?"],
+  ["Is there a bank near here?","Ima li banka ovdje blizu?","Buraya yakın bir banka var mı?"],
+  ["Where's the bus station, please?","Gdje je autobuska stanica, molim vas?","Otogar nerede, lütfen?"],
+  ["Yes, there's one on Main Street.","Da, ima jedna u Main Streetu.","Evet, Main Street'te bir tane var."],
+  ["Sorry, I don't know.","Žao mi je, ne znam.","Üzgünüm, bilmiyorum."],
+  ["Go past the traffic lights.","Prođite semafor.","Trafik ışıklarını geçin."],
+  ["Turn left at the traffic lights.","Na semaforu skrenite lijevo.","Trafik ışıklarında sola dönün."],
+  ["Make a right.","Skrenite desno.","Sağa dönün."],
+  ["Take the first street on the left.","Uđite u prvu ulicu lijevo.","Soldaki ilk sokağa girin."],
+  ["It's on the corner.","Nalazi se na uglu.","Köşede."],
+  ["It's right here.","Odmah je tu.","Hemen burada."],
+  ["Thanks very much.","Hvala puno.","Çok teşekkürler."],
+  ["You're welcome.","Nema na čemu.","Rica ederim."]
+];
+
+const DIALOG = [
+  ["Tourist","Excuse me. Can you help me?","Izvinite. Možete li mi pomoći?","Affedersiniz. Bana yardım edebilir misiniz?"],
+  ["Woman","Sure.","Naravno.","Tabii."],
+  ["Tourist","Where's the museum, please?","Gdje je muzej, molim vas?","Müze nerede, lütfen?"],
+  ["Woman","Go straight ahead and turn right on North Street. It's on the right, next to the park.","Idite pravo i skrenite desno u North Street. Nalazi se s desne strane, pored parka.","Düz gidin ve North Street'e sağa dönün. Sağ tarafta, parkın yanında."],
+  ["Tourist","Thanks very much.","Hvala puno.","Çok teşekkürler."],
+  ["Woman","You're welcome.","Nema na čemu.","Rica ederim."]
+];
+
+/* map buildings on a 900x640 grid; n = [en, bs, tr] */
+const BLD = {
+  hospital:  {x:20, y:20, w:120,h:160,l:"Hospital",i:"🏥",c:"civic",n:["hospital","bolnica","hastane"]},
+  school:    {x:140,y:20, w:120,h:160,l:"School",i:"🏫",c:"civic",n:["school","škola","okul"]},
+  train:     {x:300,y:20, w:260,h:160,l:"Train station",i:"🚉",c:"move",n:["train station","željeznička stanica","tren istasyonu"]},
+  hotel:     {x:600,y:20, w:130,h:160,l:"Hotel",i:"🏨",c:"shop",n:["hotel","hotel","otel"]},
+  cafe:      {x:730,y:20, w:130,h:160,l:"Café",i:"☕",c:"shop",n:["café","kafić","kafe"]},
+  parking:   {x:20, y:220,w:240,h:160,l:"Parking lot",i:"🅿️",c:"move",n:["parking lot","parking","otopark"]},
+  bank:      {x:300,y:220,w:86, h:160,l:"Bank",i:"🏦",c:"civic",n:["bank","banka","banka"]},
+  post:      {x:386,y:220,w:88, h:160,l:"Post office",i:"📮",c:"civic",n:["post office","pošta","postane"]},
+  gym:       {x:474,y:220,w:86, h:160,l:"Gym",i:"🏋️",c:"shop",n:["gym","teretana","spor salonu"]},
+  museum:    {x:600,y:220,w:130,h:160,l:"Museum",i:"🏛️",c:"civic",n:["museum","muzej","müze"]},
+  park:      {x:730,y:220,w:130,h:160,l:"Park",i:"🌳",c:"green",n:["park","park","park"]},
+  gas:       {x:20, y:420,w:240,h:160,l:"Gas station",i:"⛽",c:"move",n:["gas station","benzinska pumpa","benzin istasyonu"]},
+  restaurant:{x:300,y:420,w:86, h:160,l:"Restaurant",i:"🍽️",c:"shop",n:["restaurant","restoran","restoran"]},
+  cinema:    {x:386,y:420,w:88, h:160,l:"Movie theater",i:"🎬",c:"shop",n:["movie theater","kino","sinema"]},
+  pharmacy:  {x:474,y:420,w:86, h:160,l:"Pharmacy",i:"💊",c:"shop",n:["pharmacy","apoteka","eczane"]},
+  supermarket:{x:600,y:420,w:130,h:160,l:"Supermarket",i:"🛒",c:"shop",n:["supermarket","supermarket","süpermarket"]},
+  bookstore: {x:730,y:420,w:130,h:160,l:"Bookstore",i:"📚",c:"shop",n:["bookstore","knjižara","kitapçı"]}
+};
+
+const MAPQ = [
+  {s:["The post office is","the bank and the gym."], a:"between", hl:["post","bank","gym"], bs:"Pošta je između banke i teretane.", tr:"Postane, banka ile spor salonunun arasında."},
+  {s:["The bank is","the parking lot."], a:"across from", hl:["bank","parking"], bs:"Banka je preko puta parkinga.", tr:"Banka, otoparkın karşısında."},
+  {s:["The museum is","the park."], a:"next to", hl:["museum","park"], bs:"Muzej je pored parka.", tr:"Müze, parkın yanında."},
+  {s:["The movie theater is","the post office."], a:"across from", hl:["cinema","post"], bs:"Kino je preko puta pošte.", tr:"Sinema, postanenin karşısında."},
+  {s:["The café is","of Third Avenue and North Street."], a:"on the corner", hl:["cafe"], bs:"Kafić je na uglu Third Avenue i North Street.", tr:"Kafe, Third Avenue ile North Street'in köşesinde."},
+  {s:["The pharmacy is","the movie theater."], a:"next to", hl:["pharmacy","cinema"], bs:"Apoteka je pored kina.", tr:"Eczane, sinemanın yanında."},
+  {s:["The movie theater is","the restaurant and the pharmacy."], a:"between", hl:["cinema","restaurant","pharmacy"], bs:"Kino je između restorana i apoteke.", tr:"Sinema, restoran ile eczanenin arasında."},
+  {s:["The supermarket is","the museum."], a:"across from", hl:["supermarket","museum"], bs:"Supermarket je preko puta muzeja.", tr:"Süpermarket, müzenin karşısında."},
+  {s:["The school is","the hospital."], a:"next to", hl:["school","hospital"], bs:"Škola je pored bolnice.", tr:"Okul, hastanenin yanında."},
+  {s:["The bank is","of First Avenue and Main Street."], a:"on the corner", hl:["bank"], bs:"Banka je na uglu First Avenue i Main Street.", tr:"Banka, First Avenue ile Main Street'in köşesinde."},
+  {s:["The gym is","the museum."], a:"across from", hl:["gym","museum"], bs:"Teretana je preko puta muzeja.", tr:"Spor salonu, müzenin karşısında."},
+  {s:["The hotel is","the café."], a:"next to", hl:["hotel","cafe"], bs:"Hotel je pored kafića.", tr:"Otel, kafenin yanında."}
+];
+const MAPQ_OPTS = ["next to","across from","between","on the corner"];
+
+/* direction sentence pieces: [en, bs, tr] */
+const P = {
+  straight:["Go straight ahead.","Idite pravo.","Düz gidin."],
+  lNorth:["Turn left on North Street.","Skrenite lijevo u North Street.","North Street'e sola dönün."],
+  rNorth:["Turn right on North Street.","Skrenite desno u North Street.","North Street'e sağa dönün."],
+  lMain:["Turn left on Main Street.","Skrenite lijevo u Main Street.","Main Street'e sola dönün."],
+  rMain:["Turn right on Main Street.","Skrenite desno u Main Street.","Main Street'e sağa dönün."],
+  pastFirst:["Go past First Avenue.","Prođite First Avenue.","First Avenue'yu geçin."],
+  pastBoth:["Go past Main Street and North Street.","Prođite Main Street i North Street.","Main Street'i ve North Street'i geçin."],
+  pastTrain:["Go past the train station.","Prođite pored željezničke stanice.","Tren istasyonunu geçin."],
+  firstRight:["It's the first building on the right.","To je prva zgrada s desne strane.","Sağdaki ilk bina."],
+  firstLeft:["It's the first building on the left.","To je prva zgrada s lijeve strane.","Soldaki ilk bina."],
+  onRight:["It's on the right.","Nalazi se s desne strane.","Sağ tarafta."],
+  onLeft:["It's on the left.","Nalazi se s lijeve strane.","Sol tarafta."],
+  leftBetween:["It's on the left, between the bank and the gym.","Nalazi se s lijeve strane, između banke i teretane.","Sol tarafta, banka ile spor salonunun arasında."],
+  rightNextPark:["It's on the right, next to the park.","Nalazi se s desne strane, pored parka.","Sağ tarafta, parkın yanında."],
+  leftCorner:["It's on the left, on the corner of Third Avenue.","Nalazi se s lijeve strane, na uglu Third Avenue.","Sol tarafta, Third Avenue'nun köşesinde."],
+  rightCornerThird:["It's on the right, on the corner of Third Avenue.","Nalazi se s desne strane, na uglu Third Avenue.","Sağ tarafta, Third Avenue'nun köşesinde."],
+  rightCornerFirst:["It's on the right, on the corner of First Avenue.","Nalazi se s desne strane, na uglu First Avenue.","Sağ tarafta, First Avenue'nun köşesinde."],
+  leftCornerFirst:["It's on the left, on the corner of First Avenue.","Nalazi se s lijeve strane, na uglu First Avenue.","Sol tarafta, First Avenue'nun köşesinde."],
+  leftAcrossPost:["It's on the left, across from the post office.","Nalazi se s lijeve strane, preko puta pošte.","Sol tarafta, postanenin karşısında."],
+  rightNextSuper:["It's on the right, next to the supermarket.","Nalazi se s desne strane, pored supermarketa.","Sağ tarafta, süpermarketin yanında."],
+  rightNextSchool:["It's on the right, next to the school.","Nalazi se s desne strane, pored škole.","Sağ tarafta, okulun yanında."],
+  leftNextCafe:["It's on the left, next to the café.","Nalazi se s lijeve strane, pored kafića.","Sol tarafta, kafenin yanında."],
+  rightCorner:["It's on the right, on the corner.","Nalazi se s desne strane, na uglu.","Sağ tarafta, köşede."],
+  hereRight:["It's right here, on the right.","Odmah je tu, s desne strane.","Hemen burada, sağ tarafta."],
+  hereLeft:["It's right here, on the left.","Odmah je tu, s lijeve strane.","Hemen burada, sol tarafta."]
+};
+const START = [580,535];
+const R = {
+  northW:x=>[START,[580,200],[x,200]], northE:x=>[START,[580,200],[x,200]],
+  mainW:x=>[START,[580,400],[x,400]],  mainE:x=>[START,[580,400],[x,400]],
+  up:y=>[START,[580,y]]
+};
+const FOLLOW = [
+  {steps:["straight","rNorth","rightNextPark"], a:"museum", route:R.northE(665)},
+  {steps:["straight","lNorth","leftBetween"], a:"post", route:R.northW(430)},
+  {steps:["straight","lMain","leftAcrossPost"], a:"cinema", route:R.mainW(430)},
+  {steps:["straight","rMain","rightNextSuper"], a:"bookstore", route:R.mainE(795)},
+  {steps:["straight","lNorth","firstRight"], a:"train", route:R.northW(430)},
+  {steps:["straight","pastBoth","rightCorner"], a:"hotel", route:R.up(100)},
+  {steps:["straight","lMain","pastFirst","onRight"], a:"parking", route:R.mainW(140)},
+  {steps:["straight","rNorth","leftCorner"], a:"cafe", route:R.northE(795)},
+  {steps:["straight","lNorth","pastFirst","rightNextSchool"], a:"hospital", route:R.northW(80)},
+  {steps:["hereLeft"], a:"pharmacy", route:R.up(505)},
+  {steps:["straight","rMain","firstLeft"], a:"museum", route:R.mainE(665)},
+  {steps:["straight","lMain","pastFirst","onLeft"], a:"gas", route:R.mainW(140)}
+];
+
+/* give directions: options are arrays of P keys; first option is correct */
+const GIVE = [
+  {a:"bookstore", route:R.mainE(795), o:[["straight","rMain","rightNextSuper"],["straight","lMain","rightNextSuper"],["straight","rNorth","onLeft"]]},
+  {a:"gym", route:R.mainW(517), o:[["straight","lMain","firstRight"],["straight","rMain","firstLeft"],["straight","lNorth","onRight"]]},
+  {a:"park", route:R.northE(795), o:[["straight","rNorth","rightCornerThird"],["straight","rMain","rightCornerThird"],["straight","lNorth","onLeft"]]},
+  {a:"bank", route:R.mainW(343), o:[["straight","lMain","rightCornerFirst"],["straight","lMain","leftCornerFirst"],["straight","rMain","onRight"]]},
+  {a:"restaurant", route:R.mainW(343), o:[["straight","lMain","leftCornerFirst"],["straight","lMain","rightCornerFirst"],["straight","lNorth","leftBetween"]]},
+  {a:"school", route:R.northW(200), o:[["straight","lNorth","pastTrain","rightCornerFirst"],["straight","lNorth","leftCornerFirst"],["straight","rNorth","leftNextCafe"]]},
+  {a:"supermarket", route:R.up(505), o:[["hereRight"],["hereLeft"],["straight","lMain","onRight"]]},
+  {a:"gas", route:R.mainW(140), o:[["straight","lMain","pastFirst","onLeft"],["straight","lMain","pastFirst","onRight"],["straight","lNorth","pastFirst","onLeft"]]}
+];
+
+/* complete the dialogue: parts are text or {a, o} */
+const DLG1 = [
+  {who:"Tourist", parts:["Excuse ",{a:"me",o:["me","you"]},". Is ",{a:"there",o:["there","it"]}," a pharmacy near here?"],
+   en:"Excuse me. Is there a pharmacy near here?", bs:"Izvinite. Ima li apoteka ovdje blizu?", tr:"Affedersiniz. Buraya yakın bir eczane var mı?"},
+  {who:"Woman", parts:["Yes, there's ",{a:"one",o:["one","it"]}," on Main Street. Go straight ",{a:"ahead",o:["ahead","right"]},
+     " and turn left ",{a:"on",o:["on","in"]}," Main Street. It's ",{a:"on",o:["on","in"]}," the left, ",{a:"next",o:["next","near"]}," to the movie theater."],
+   en:"Yes, there's one on Main Street. Go straight ahead and turn left on Main Street. It's on the left, next to the movie theater.",
+   bs:"Da, ima jedna u Main Streetu. Idite pravo i skrenite lijevo u Main Street. Nalazi se s lijeve strane, pored kina.",
+   tr:"Evet, Main Street'te bir tane var. Düz gidin ve Main Street'e sola dönün. Sol tarafta, sinemanın yanında."},
+  {who:"Tourist", parts:["Thanks very ",{a:"much",o:["much","many"]},"."], en:"Thanks very much.", bs:"Hvala puno.", tr:"Çok teşekkürler."},
+  {who:"Woman", parts:["You're ",{a:"welcome",o:["welcome","thanks"]},"."], en:"You're welcome.", bs:"Nema na čemu.", tr:"Rica ederim."}
+];
+const DLG2 = [
+  {who:"Receptionist", parts:["Welcome to the Park Hotel. Here's your ",{a:"key",o:["key","door"]},"."], en:"Welcome to the Park Hotel. Here's your key.", bs:"Dobro došli u hotel Park. Izvolite vaš ključ.", tr:"Park Otel'e hoş geldiniz. Buyurun, anahtarınız."},
+  {who:"Guest", parts:["Thank you. ",{a:"Is",o:["Is","Are"]}," there a TV in the room?"], en:"Thank you. Is there a TV in the room?", bs:"Hvala. Ima li televizor u sobi?", tr:"Teşekkürler. Odada televizyon var mı?"},
+  {who:"Receptionist", parts:["Yes, there ",{a:"is",o:["is","are"]},". And there ",{a:"are",o:["is","are"]}," two beds."], en:"Yes, there is. And there are two beds.", bs:"Da, ima. I ima dva kreveta.", tr:"Evet, var. Ve iki yatak var."},
+  {who:"Guest", parts:["Are there ",{a:"any",o:["a","any"]}," towels?"], en:"Are there any towels?", bs:"Ima li peškira?", tr:"Havlu var mı?"},
+  {who:"Receptionist", parts:["Yes, they're ",{a:"in",o:["in","on"]}," the bathroom."], en:"Yes, they're in the bathroom.", bs:"Da, u kupatilu su.", tr:"Evet, banyodalar."},
+  {who:"Guest", parts:["Is there a restaurant ",{a:"near",o:["near","next"]}," here?"], en:"Is there a restaurant near here?", bs:"Ima li restoran ovdje blizu?", tr:"Buraya yakın bir restoran var mı?"},
+  {who:"Receptionist", parts:["Yes, there's one ",{a:"across",o:["across","between"]}," from the hotel."], en:"Yes, there's one across from the hotel.", bs:"Da, ima jedan preko puta hotela.", tr:"Evet, otelin karşısında bir tane var."}
+];
+
+const ORDER = [
+  {en:"Excuse me, where's the bank, please?", bs:"Izvinite, gdje je banka, molim vas?", tr:"Affedersiniz, banka nerede, lütfen?"},
+  {en:"Is there a pharmacy near here?", bs:"Ima li apoteka ovdje blizu?", tr:"Buraya yakın bir eczane var mı?"},
+  {en:"Go straight ahead and turn left.", bs:"Idite pravo i skrenite lijevo.", tr:"Düz gidin ve sola dönün."},
+  {en:"It's on the right, next to the park.", bs:"Nalazi se s desne strane, pored parka.", tr:"Sağ tarafta, parkın yanında."},
+  {en:"The post office is between the bank and the gym.", bs:"Pošta je između banke i teretane.", tr:"Postane, banka ile spor salonunun arasında."},
+  {en:"There's a supermarket across from the museum.", bs:"Preko puta muzeja ima supermarket.", tr:"Müzenin karşısında bir süpermarket var."},
+  {en:"Turn right at the traffic lights.", bs:"Na semaforu skrenite desno.", tr:"Trafik ışıklarında sağa dönün."},
+  {en:"Where were you yesterday at three o'clock?", bs:"Gdje si bio/bila jučer u tri sata?", tr:"Dün saat üçte neredeydin?"}
+];
+
+const THERE = [
+  {s:["There","a TV in the room."], a:"is", o:["is","are"], full:"There is a TV in the room.", bs:"U sobi ima televizor.", tr:"Odada bir televizyon var."},
+  {s:["There","two beds."], a:"are", o:["is","are"], full:"There are two beds.", bs:"Ima dva kreveta.", tr:"İki yatak var."},
+  {s:["","there a phone?"], a:"Is", o:["Is","Are"], full:"Is there a phone?", bs:"Ima li telefon?", tr:"Telefon var mı?"},
+  {s:["There aren't","windows."], a:"any", o:["a","any"], full:"There aren't any windows.", bs:"Nema prozora.", tr:"Hiç pencere yok."},
+  {s:["","there any towels?"], a:"Are", o:["Is","Are"], full:"Are there any towels?", bs:"Ima li peškira?", tr:"Havlu var mı?"},
+  {s:["There","a shower, but there isn't a bath."], a:"is", o:["is","are"], full:"There is a shower, but there isn't a bath.", bs:"Ima tuš, ali nema kade.", tr:"Duş var ama küvet yok."},
+  {s:["Is there a lamp? No, there","."], a:"isn't", o:["isn't","aren't"], full:"Is there a lamp? No, there isn't.", bs:"Ima li lampa? Ne, nema.", tr:"Lamba var mı? Hayır, yok."},
+  {s:["Are there any chairs? Yes, there","."], a:"are", o:["is","are"], full:"Are there any chairs? Yes, there are.", bs:"Ima li stolica? Da, ima.", tr:"Sandalye var mı? Evet, var."},
+  {s:["The remote control is","the bed."], a:"under", o:["in","on","under"], full:"The remote control is under the bed.", bs:"Daljinski je ispod kreveta.", tr:"Kumanda yatağın altında."},
+  {s:["The remote control is","the TV."], a:"on", o:["in","on","under"], full:"The remote control is on the TV.", bs:"Daljinski je na televizoru.", tr:"Kumanda televizyonun üstünde."},
+  {s:["The phone is","the bag."], a:"in", o:["in","on","under"], full:"The phone is in the bag.", bs:"Telefon je u torbi.", tr:"Telefon çantanın içinde."}
+];
+
+const SORT = [
+  ["home","at","kod kuće","evde"],["the kitchen","in","u kuhinji","mutfakta"],["a bus","on","u autobusu","otobüste"],
+  ["work","at","na poslu","işte"],["bed","in","u krevetu","yatakta"],["a plane","on","u avionu","uçakta"],
+  ["the airport","at","na aerodromu","havalimanında"],["Australia","in","u Australiji","Avustralya'da"],["a train","on","u vozu","trende"],
+  ["school","at","u školi","okulda"],["a car","in","u autu","arabada"],["the street","on","na ulici","sokakta"],
+  ["a meeting","in","na sastanku","toplantıda"],["the gym","at","u teretani","spor salonunda"],["a boat","on","na brodu","teknede"],
+  ["the park","in","u parku","parkta"]
+];
+
+const WAS = [
+  {s:["Where","you yesterday?"], a:"were", o:["was","were"], full:"Where were you yesterday?", bs:"Gdje si bio/bila jučer?", tr:"Dün neredeydin?"},
+  {s:["He","at work."], a:"was", o:["was","were"], full:"He was at work.", bs:"Bio je na poslu.", tr:"İşteydi."},
+  {s:["They","at the beach."], a:"were", o:["was","were"], full:"They were at the beach.", bs:"Bili su na plaži.", tr:"Plajdaydılar."},
+  {s:["I","in bed at ten o'clock."], a:"was", o:["was","were"], full:"I was in bed at ten o'clock.", bs:"U deset sati sam bio/bila u krevetu.", tr:"Saat onda yataktaydım."},
+  {s:["We","at home. We were at the gym."], a:"weren't", o:["wasn't","weren't"], full:"We weren't at home. We were at the gym.", bs:"Nismo bili kod kuće. Bili smo u teretani.", tr:"Evde değildik. Spor salonundaydık."},
+  {s:["","she on a train?"], a:"Was", o:["Was","Were"], full:"Was she on a train?", bs:"Je li ona bila u vozu?", tr:"O trende miydi?"},
+  {s:["She","a waitress before she was a star."], a:"was", o:["was","were"], full:"She was a waitress before she was a star.", bs:"Bila je konobarica prije nego što je postala zvijezda.", tr:"Yıldız olmadan önce garsondu."},
+  {s:["Were they famous? No, they","."], a:"weren't", o:["wasn't","weren't"], full:"Were they famous? No, they weren't.", bs:"Jesu li bili poznati? Ne, nisu.", tr:"Ünlüler miydi? Hayır, değillerdi."}
+];
+
+/* UI text: [en, bs, tr] */
+const UI = {
+  intro:["Places in town, prepositions of place and directions. Click any English word or sentence to see it in Bosnian or Turkish.","Mjesta u gradu, prijedlozi za mjesto i upute za put. Klikni na bilo koju englesku riječ ili rečenicu da je vidiš na bosanskom ili turskom.","Şehirdeki yerler, yer edatları ve yol tarifi. Boşnakça veya Türkçesini görmek için herhangi bir İngilizce kelimeye ya da cümleye tıkla."],
+  ok:["Correct! Well done.","Tačno! Bravo.","Doğru! Aferin."],
+  no:["Not quite. Look at the correct answer.","Nije tačno. Pogledaj tačan odgovor.","Tam değil. Doğru cevaba bak."],
+  done:["Finished! Your score:","Gotovo! Tvoj rezultat:","Bitti! Puanın:"],
+  how:["How it works","Kako se koristi","Nasıl kullanılır"]
+};
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $ = q => document.querySelector(q);
+function el(tag, attrs={}, kids=[]){
+  const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==="class") e.className=v; else if(k==="text") e.textContent=v; else e.setAttribute(k,v);
+  }
+  [].concat(kids).forEach(k=>{ if(k!==null && k!==undefined && k!==false) e.append(k); });
+  return e;
+}
+function trLines(bs,tr){
+  return el("span",{class:"out"},[
+    el("span",{class:"trline bs"},[el("span",{class:"tag bs",text:"BS"}),el("span",{text:bs})]),
+    el("span",{class:"trline tr"},[el("span",{class:"tag tr",text:"TR"}),el("span",{text:tr})])
+  ]);
+}
+function toggler(node, ctrl){
+  (ctrl||node).addEventListener("click",()=>{ const o=node.classList.toggle("open"); (ctrl||node).setAttribute("aria-expanded",o); });
+}
+function chip(en,bs,tr,pre){
+  const b=el("button",{class:"tx",type:"button","aria-expanded":"false"});
+  if(pre) b.append(pre);
+  b.append(el("span",{class:"en",text:en}),trLines(bs,tr));
+  toggler(b); return b;
+}
+function trBtnLabel(){
+  return [el("span",{class:"lbl-bs",text:"⇄ Prevedi"}),el("span",{class:"lbl-dot",text:" · "}),el("span",{class:"lbl-tr",text:"Çevir"})];
+}
+/* instruction or explanation with a translate button; en may contain <b> markup marked with ** */
+function note(t){
+  const [en,bs,tr]=t;
+  const d=el("div",{class:"note"});
+  const p=el("p",{class:"en"});
+  en.split("**").forEach((part,i)=>p.append(i%2? el("b",{text:part}) : part));
+  const btn=el("button",{class:"trbtn",type:"button","aria-expanded":"false"},trBtnLabel());
+  d.append(p,trLines(bs,tr),btn);
+  toggler(d,btn);
+  return d;
+}
+function explain(items){
+  const box=el("div",{class:"explain"});
+  const all=el("button",{class:"trbtn",type:"button"},[el("span",{class:"lbl-bs",text:"⇄ Prevedi sve"}),el("span",{class:"lbl-dot",text:" · "}),el("span",{class:"lbl-tr",text:"Tümünü çevir"})]);
+  const head=el("div",{class:"explain-head"},[el("h3",{text:UI.how[0]+" · "+UI.how[1]+" · "+UI.how[2]}),all]);
+  box.append(head);
+  const notes=items.map(note); notes.forEach(n=>box.append(n));
+  all.addEventListener("click",()=>{ const open=!notes.every(n=>n.classList.contains("open")); notes.forEach(n=>n.classList.toggle("open",open)); });
+  return box;
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function joinP(keys,idx){ return keys.map(k=>P[k][idx]).join(" "); }
+function capTR(s){ return s.charAt(0).toLocaleUpperCase("tr")+s.slice(1); }
+function fbLine(t){ return el("span",{class:"out",style:"display:flex;flex-direction:column;gap:2px"},[
+  el("span",{class:"trline bs"},[el("span",{class:"tag bs",text:"BS"}),el("span",{text:t[1]})]),
+  el("span",{class:"trline tr"},[el("span",{class:"tag tr",text:"TR"}),el("span",{text:t[2]})])
+]); }
+function setFb(fb,ok){
+  fb.innerHTML=""; const t=ok?UI.ok:UI.no;
+  fb.className="feedback "+(ok?"ok":"no");
+  fb.append(el("span",{class:"msg",text:t[0]}),fbLine(t));
+}
+
+let secCount=0;
+function section(id,title){
+  secCount++;
+  const sec=el("section",{class:"block",id});
+  const plate=el("button",{class:"plate",type:"button","aria-expanded":"false"},[
+    el("span",{class:"num",text:String(secCount)}),
+    el("span",{class:"ptitle"},[el("h2",{text:title[0]}),trLines(title[1],title[2])])
+  ]);
+  toggler(plate);
+  const body=el("div",{class:"body"});
+  sec.append(plate,body); $("#main").append(sec);
+  $("#jump").append(el("a",{href:"#"+id,text:secCount+" "+(title[3]||title[0])}));
+  return body;
+}
+
+/* language switch */
+function setLang(l){
+  document.body.dataset.lang=l;
+  document.querySelectorAll(".langbtn").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===l));
+  try{ localStorage.setItem("u9-lang",l); }catch(e){}
+}
+document.querySelectorAll(".langbtn").forEach(b=>b.addEventListener("click",()=>setLang(b.dataset.lang)));
+try{ const saved=localStorage.getItem("u9-lang"); if(saved) setLang(saved); }catch(e){}
+$("#intro").append(note(UI.intro));
+
+/* =========================================================
+   MAP
+   ========================================================= */
+const SVGNS="http://www.w3.org/2000/svg";
+function s(tag,attrs={},text){
+  const e=document.createElementNS(SVGNS,tag);
+  for(const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  if(text!==undefined) e.textContent=text;
+  return e;
+}
+function buildMap(container,opts={}){
+  const v=s("svg",{viewBox:"0 0 900 640",role:"img","aria-label":"Town map with First, Second and Third Avenue and North, Main and South Street"});
+  v.append(s("rect",{x:0,y:0,width:900,height:640,class:"m-walk"}));
+  [[260,0,40,640],[560,0,40,640],[860,0,40,640],[0,180,900,40],[0,380,900,40],[0,580,900,40]]
+    .forEach(r=>v.append(s("rect",{x:r[0],y:r[1],width:r[2],height:r[3],class:"m-asphalt"})));
+  [280,580,880].forEach(x=>v.append(s("line",{x1:x,y1:0,x2:x,y2:640,class:"m-dash"})));
+  [200,400,600].forEach(y=>v.append(s("line",{x1:0,y1:y,x2:900,y2:y,class:"m-dash"})));
+  [["North Street",200],["Main Street",400],["South Street",600]].forEach(([t,y])=>{
+    v.append(s("text",{x:150,y:y+5,"text-anchor":"middle",class:"m-road-label"},t.toUpperCase()));
+    v.append(s("text",{x:730,y:y+5,"text-anchor":"middle",class:"m-road-label"},t.toUpperCase()));
+  });
+  [["First Avenue",280],["Second Avenue",580],["Third Avenue",880]].forEach(([t,x])=>{
+    [100,300,500].forEach(y=>{
+      if(x===580 && y!==100) return;
+      v.append(s("text",{x,y,"text-anchor":"middle",class:"m-road-label",transform:`rotate(-90 ${x} ${y})`,dy:5},t.toUpperCase()));
+    });
+  });
+  const groups={};
+  for(const [id,b] of Object.entries(BLD)){
+    const g=s("g",{class:"bgroup","data-id":id});
+    g.append(s("rect",{x:b.x+4,y:b.y+4,width:b.w-8,height:b.h-8,rx:6,class:"bld "+b.c}));
+    const cx=b.x+b.w/2;
+    g.append(s("text",{x:cx,y:b.y+b.h/2-12,"text-anchor":"middle",class:"bicon"},b.i));
+    const words=b.l.split(" ");
+    const lines=(b.w<100 && words.length>1)?words:[b.l];
+    const t=s("text",{x:cx,y:b.y+b.h/2+16,"text-anchor":"middle",class:"blabel"});
+    lines.forEach((w,i)=>t.append(s("tspan",{x:cx,dy:i?16:0},w)));
+    g.append(t);
+    if(opts.clickable){
+      g.classList.add("clickable");
+      g.setAttribute("tabindex","0"); g.setAttribute("role","button"); g.setAttribute("aria-label",b.l);
+      g.addEventListener("click",()=>opts.onPick(id));
+      g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();opts.onPick(id);} });
+    }
+    v.append(g); groups[id]=g;
+  }
+  const route=s("polyline",{class:"route",points:""});
+  v.append(route);
+  if(opts.you){
+    const y=s("g",{class:"you"});
+    y.append(s("circle",{cx:START[0],cy:START[1],r:13}));
+    y.append(s("path",{d:`M${START[0]} ${START[1]-30} l-9 14 h18 z`,fill:"var(--accent)",stroke:"#1d2421","stroke-width":2}));
+    y.append(s("rect",{x:START[0]-58,y:START[1]+56,width:116,height:22,rx:4,fill:"var(--accent)"}));
+    y.append(s("text",{x:START[0],y:START[1]+72,"text-anchor":"middle"},"YOU ARE HERE"));
+    v.append(y);
+  }
+  container.append(v);
+  return {
+    clear(){ Object.values(groups).forEach(g=>g.classList.remove("hl","ok","no")); route.setAttribute("points",""); route.classList.remove("draw"); },
+    mark(id,cls){ groups[id] && groups[id].classList.add(cls); },
+    route(pts){ route.setAttribute("points",pts.map(p=>p.join(",")).join(" ")); route.classList.add("draw"); }
+  };
+}
+
+/* =========================================================
+   QUIZ RUNNER
+   ========================================================= */
+function runQuiz(root,items,render){
+  let i=0,score=0,answered=new Array(items.length).fill(null),order=items;
+  function start(){ order = render.shuffle ? shuffle(items) : items; i=0; score=0; answered.fill(null); draw(); }
+  function draw(){
+    root.innerHTML="";
+    if(i>=order.length){
+      const d=el("div",{class:"done"},[el("span",{class:"msg",text:`${UI.done[0]} ${score} / ${order.length}`}),
+        fbLine([null,`${UI.done[1]} ${score} / ${order.length}`,`${UI.done[2]} ${score} / ${order.length}`])]);
+      const again=el("button",{class:"btn",type:"button",text:"Try again"});
+      again.onclick=start;
+      root.append(d,el("div",{class:"nav"},[again]));
+      render.onEnd && render.onEnd();
+      return;
+    }
+    const head=el("div",{class:"qhead"},[
+      el("span",{class:"qnum",text:`Question ${i+1} of ${order.length}`}),
+      el("span",{class:"score",text:`Score ${score} / ${order.length}`})
+    ]);
+    const fb=el("div",{class:"feedback","aria-live":"polite"});
+    const next=el("button",{class:"btn",type:"button",text:i===order.length-1?"See score":"Next"});
+    next.disabled=answered[i]===null;
+    next.onclick=()=>{i++;draw();};
+    root.append(head);
+    render.draw(root,order[i],ok=>{
+      if(answered[i]!==null) return;
+      answered[i]=ok; if(ok) score++;
+      head.querySelector(".score").textContent=`Score ${score} / ${order.length}`;
+      setFb(fb,ok); next.disabled=false;
+    },fb);
+    root.append(fb,el("div",{class:"nav"},[next]));
+  }
+  start();
+}
+/* gap-choice question used by several quizzes */
+function gapQuestion(q, opts){
+  return {
+    shuffle: opts && opts.shuffle,
+    draw(root,item,answer){
+      const qt=el("div",{class:"qtext"});
+      if(item.s[0]) qt.append(item.s[0]+" ");
+      qt.append(el("span",{class:"gap",text:"?"}));
+      if(item.s[1]) qt.append((/^[.,?!]/.test(item.s[1])?"":" ")+item.s[1]);
+      const optsBox=el("div",{class:"opts"});
+      const after=el("div",{class:"after"});
+      (item.o||q).forEach(o=>{
+        const b=el("button",{class:"opt",type:"button",text:o});
+        b.onclick=()=>{
+          const ok=o===item.a;
+          optsBox.querySelectorAll(".opt").forEach(x=>{x.disabled=true; if(x.textContent===item.a) x.classList.add("ok");});
+          if(!ok) b.classList.add("no");
+          qt.querySelector(".gap").textContent=item.a;
+          const full=item.full || (item.s[0]+" "+item.a+" "+item.s[1]);
+          after.append(chip(full,item.bs,item.tr));
+          opts && opts.onAnswer && opts.onAnswer(item);
+          answer(ok);
+        };
+        optsBox.append(b);
+      });
+      opts && opts.before && opts.before(item);
+      root.append(qt,optsBox,after);
+    }
+  };
+}
+
+/* gap-fill dialogue with dropdowns */
+function gapDialog(container,lines){
+  const sels=[];
+  lines.forEach(l=>{
+    const text=el("div",{class:"gtext"});
+    const line=el("div",{class:"line"});
+    l.parts.forEach(p=>{
+      if(typeof p==="string"){ line.append(p); return; }
+      const sel=el("select",{class:"gapsel","aria-label":"Choose a word"});
+      sel.append(el("option",{value:"",text:"…"}));
+      shuffle(p.o).forEach(o=>sel.append(el("option",{value:o,text:o})));
+      sel.dataset.a=p.a; sels.push(sel); line.append(sel);
+    });
+    const btn=el("button",{class:"trbtn",type:"button","aria-expanded":"false"},trBtnLabel());
+    text.append(line,trLines(l.bs,l.tr),btn);
+    toggler(text,btn);
+    container.append(el("div",{class:"gline"},[el("b",{text:l.who}),text]));
+  });
+  const fb=el("div",{class:"feedback","aria-live":"polite"});
+  const check=el("button",{class:"btn",type:"button",text:"Check answers"});
+  const reset=el("button",{class:"btn ghost",type:"button",text:"Start again"});
+  check.onclick=()=>{
+    let n=0;
+    container.querySelectorAll(".fix").forEach(f=>f.remove());
+    sels.forEach(sel=>{
+      const ok=sel.value===sel.dataset.a; if(ok) n++;
+      sel.classList.toggle("ok",ok); sel.classList.toggle("no",!ok);
+      if(!ok) sel.after(el("span",{class:"fix",text:"→ "+sel.dataset.a}));
+    });
+    fb.innerHTML=""; fb.className="feedback "+(n===sels.length?"ok":"no");
+    fb.append(el("span",{class:"msg",text:`${n} / ${sels.length} correct`}),
+      fbLine([null,`${n} / ${sels.length} tačno`,`${n} / ${sels.length} doğru`]));
+  };
+  reset.onclick=()=>{
+    sels.forEach(sel=>{sel.value="";sel.classList.remove("ok","no");});
+    container.querySelectorAll(".fix").forEach(f=>f.remove());
+    fb.innerHTML=""; fb.className="feedback";
+  };
+  container.append(fb,el("div",{class:"nav"},[check,reset]));
+}
+
+/* =========================================================
+   SECTIONS
+   ========================================================= */
+
+/* 1 places */
+{
+  const b=section("places",["Places in town","Mjesta u gradu","Şehirdeki yerler","Places"]);
+  b.append(note(["Say each word out loud, then click it to check the translation.","Izgovori svaku riječ naglas, pa klikni na nju da provjeriš prijevod.","Her kelimeyi yüksek sesle söyle, sonra çevirisini kontrol etmek için üzerine tıkla."]));
+  const cards=el("div",{class:"cards"});
+  PLACES.forEach(([i,en,bs,tr])=>cards.append(chip(en,bs,tr,el("span",{class:"pic","aria-hidden":"true",text:i}))));
+  b.append(cards);
+  b.append(el("h3",{text:"Picture quiz"}));
+  b.append(note(["What place is it? Look at the picture and choose the word.","Koje je ovo mjesto? Pogledaj sliku i izaberi riječ.","Burası neresi? Resme bak ve kelimeyi seç."]));
+  const q=el("div",{class:"qcard"}); b.append(q);
+  const pool=PLACES.slice(0,20);
+  const items=shuffle(pool).slice(0,10).map(p=>({p,o:shuffle([p[1],...shuffle(pool.filter(x=>x!==p)).slice(0,3).map(x=>x[1])])}));
+  runQuiz(q,items,{
+    shuffle:true,
+    draw(root,item,answer){
+      root.append(el("div",{class:"bigpic","aria-label":"picture",text:item.p[0]}));
+      const opts=el("div",{class:"opts"}); const after=el("div",{class:"after"});
+      item.o.forEach(o=>{
+        const btn=el("button",{class:"opt",type:"button",text:o});
+        btn.onclick=()=>{
+          const ok=o===item.p[1];
+          opts.querySelectorAll(".opt").forEach(x=>{x.disabled=true; if(x.textContent===item.p[1]) x.classList.add("ok");});
+          if(!ok) btn.classList.add("no");
+          after.append(chip(item.p[1],item.p[2],item.p[3]));
+          answer(ok);
+        };
+        opts.append(btn);
+      });
+      root.append(opts,after);
+    }
+  });
+}
+
+/* 2 prepositions */
+function prepSVG(kind){
+  const v=s("svg",{viewBox:"0 0 200 90","aria-hidden":"true"});
+  const box=(x,y,t)=>s("rect",{x,y,width:44,height:44,rx:5,class:t?"box-t":"box-o"});
+  if(kind==="next") v.append(box(50,23,1),box(98,23,0));
+  if(kind==="across") v.append(box(20,23,1),box(136,23,0),s("rect",{x:76,y:10,width:48,height:70,class:"road"}),
+     s("path",{d:"M70 45 L130 45",class:"arrow"}),s("path",{d:"M134 45 L124 39 L124 51 Z",class:"arrowhead"}),s("path",{d:"M66 45 L76 39 L76 51 Z",class:"arrowhead"}));
+  if(kind==="between") v.append(box(30,23,0),box(78,23,1),box(126,23,0));
+  if(kind==="corner") v.append(s("path",{d:"M60 8 L60 82 M60 82 L190 82",stroke:"currentColor","stroke-width":3,fill:"none",opacity:.5}),box(64,34,1));
+  if(kind==="in") v.append(s("path",{d:"M70 20 L70 80 L130 80 L130 20",fill:"none",stroke:"currentColor","stroke-width":3,opacity:.6}),s("circle",{cx:100,cy:62,r:15,class:"box-t"}));
+  if(kind==="on") v.append(s("rect",{x:65,y:45,width:70,height:38,rx:4,class:"box-o"}),s("circle",{cx:100,cy:30,r:15,class:"box-t"}));
+  if(kind==="under") v.append(s("rect",{x:55,y:12,width:90,height:12,rx:3,class:"box-o"}),s("rect",{x:60,y:24,width:8,height:58,class:"box-o"}),s("rect",{x:132,y:24,width:8,height:58,class:"box-o"}),s("circle",{cx:100,cy:66,r:15,class:"box-t"}));
+  if(kind==="near") v.append(box(40,23,1),box(120,23,0),s("text",{x:100,y:20,"text-anchor":"middle","font-size":12,fill:"currentColor"},"near"));
+  v.style.color="var(--muted)";
+  return v;
+}
+{
+  const b=section("prepositions",["Where is it? Prepositions of place","Gdje je? Prijedlozi za mjesto","Nerede? Yer edatları","Where is it?"]);
+  b.append(note(["The blue box is the place we are talking about. Click the words and sentences for a translation.","Plava kutija je mjesto o kojem govorimo. Klikni na riječi i rečenice za prijevod.","Mavi kutu, bahsettiğimiz yerdir. Çeviri için kelimelere ve cümlelere tıkla."]));
+  const grid=el("div",{class:"preps"});
+  PREPS.forEach(p=>grid.append(el("div",{class:"prep"},[prepSVG(p.draw),chip(p.en,p.bs,p.tr),chip(...p.ex)])));
+  b.append(grid);
+  b.append(explain([
+    ["We use prepositions of place to say **where** something is. In English the preposition comes **before** the place: The bank is **next to** the post office.",
+     "Prijedloge za mjesto koristimo da kažemo gdje se nešto nalazi. U engleskom prijedlog dolazi ispred mjesta: The bank is next to the post office. (Banka je pored pošte.)",
+     "Bir şeyin nerede olduğunu söylemek için yer edatlarını kullanırız. İngilizcede edat yerden önce gelir, Türkçede ise sonra: The bank is next to the post office. (Banka, postanenin yanında.)"],
+    ["**between** always has two places: between the bank **and** the gym.",
+     "between uvijek ima dva mjesta: između banke i teretane.",
+     "between her zaman iki yerle kullanılır: banka ile spor salonunun arasında."],
+    ["**across from** means on the other side of the street.",
+     "across from znači s druge strane ulice (preko puta).",
+     "across from, caddenin karşı tarafında demektir."],
+    ["**on the corner** means the place is where two streets meet: on the corner of Main Street and First Avenue.",
+     "on the corner znači da je mjesto tamo gdje se sastaju dvije ulice: na uglu Main Streeta i First Avenue.",
+     "on the corner, yerin iki caddenin kesiştiği yerde olduğunu anlatır: Main Street ile First Avenue'nun köşesinde."],
+    ["**in**, **on** and **under** are for small things: The remote control is under the bed.",
+     "in, on i under koristimo za male stvari: Daljinski je ispod kreveta.",
+     "in, on ve under küçük eşyalar için kullanılır: Kumanda yatağın altında."]
+  ]));
+}
+
+/* 3 directions */
+{
+  const b=section("directions",["Asking for and giving directions","Pitanje za put i davanje uputa","Yol sorma ve yol tarifi verme","Directions"]);
+  b.append(note(["Look at the arrows. Click each sentence to see what it means.","Pogledaj strelice. Klikni na svaku rečenicu da vidiš šta znači.","Oklara bak. Ne anlama geldiğini görmek için her cümleye tıkla."]));
+  const turns=el("div",{class:"turns"});
+  TURNS.forEach(t=>{
+    const v=s("svg",{viewBox:"0 0 100 90","aria-hidden":"true"});
+    v.append(s("rect",{x:40,y:0,width:20,height:90,class:"road"}));
+    if(t.side){
+      v.append(s("rect",{x:6,y:30,width:28,height:30,rx:3,class:t.side==="left"?"box-t":"box-o"}));
+      v.append(s("rect",{x:66,y:30,width:28,height:30,rx:3,class:t.side==="right"?"box-t":"box-o"}));
+      v.append(s("path",{d:"M50 85 L50 20",class:"bigarrow"}),s("path",{d:"M50 8 L41 24 L59 24 Z",class:"bigarrowhead"}));
+    } else {
+      if(t.en!=="Go straight ahead.") v.append(s("rect",{x:0,y:35,width:100,height:20,class:"road"}));
+      v.append(s("path",{d:t.d,class:"bigarrow"}),s("path",{d:t.h,class:"bigarrowhead"}));
+    }
+    turns.append(el("div",{class:"turn"},[v,chip(t.en,t.bs,t.tr)]));
+  });
+  b.append(turns);
+  b.append(explain([
+    ["To ask politely, start with **Excuse me.** Then ask: **Is there a** bank **near here?** or **Where's the** bank, **please?**",
+     "Da pitaš pristojno, počni sa Excuse me (Izvinite). Zatim pitaj: Is there a bank near here? (Ima li banka ovdje blizu?) ili Where's the bank, please? (Gdje je banka, molim vas?)",
+     "Kibarca sormak için Excuse me (Affedersiniz) ile başla. Sonra sor: Is there a bank near here? (Buraya yakın bir banka var mı?) ya da Where's the bank, please? (Banka nerede, lütfen?)"],
+    ["To give directions, use the verb **without 'you'**: Turn left. Go straight ahead. This is the imperative.",
+     "Za davanje uputa koristi glagol bez 'you': Turn left. Go straight ahead. (Skrenite lijevo. Idite pravo.) To je imperativ (zapovjedni način).",
+     "Yol tarifi verirken fiili 'you' olmadan kullan: Turn left. Go straight ahead. (Sola dönün. Düz gidin.) Buna emir kipi denir."],
+    ["**on the left / on the right** tells you which side of the street the place is on.",
+     "on the left / on the right kaže s koje strane ulice se mjesto nalazi.",
+     "on the left / on the right, yerin caddenin hangi tarafında olduğunu söyler."],
+    ["We say turn left **on** North Street (the street) and turn right **at** the traffic lights (the place where you turn).",
+     "Kažemo turn left on North Street (u ulicu) i turn right at the traffic lights (na semaforu, mjesto gdje skrećeš).",
+     "Turn left on North Street (North Street'e, cadde) ve turn right at the traffic lights (trafik ışıklarında, döndüğün yer) deriz."],
+    ["Answer **Yes, there's one** on Main Street. We say **one** so we don't repeat the word bank.",
+     "Odgovori Yes, there's one on Main Street. Kažemo one da ne bismo ponavljali riječ bank.",
+     "Yes, there's one on Main Street diye cevap ver. bank kelimesini tekrar etmemek için one deriz."]
+  ]));
+  b.append(el("h3",{text:"Useful phrases"}));
+  const ph=el("div",{class:"phrases"}); PHRASES.forEach(p=>ph.append(chip(...p))); b.append(ph);
+  b.append(el("h3",{text:"Example dialogue"}));
+  const dl=el("div",{class:"dialog"});
+  DIALOG.forEach(([who,en,bs,tr])=>dl.append(el("div",{class:"dline"},[el("b",{text:who}),el("div",{},[chip(en,bs,tr)])])));
+  b.append(dl);
+}
+
+/* 4 map quiz */
+{
+  const b=section("map-quiz",["Map quiz: where is it?","Kviz s mapom: gdje je?","Harita testi: nerede?","Map quiz"]);
+  b.append(note(["Look at the highlighted buildings on the map and choose the correct preposition.","Pogledaj označene zgrade na mapi i izaberi tačan prijedlog.","Haritada işaretli binalara bak ve doğru edatı seç."]));
+  const mb=el("div",{class:"mapbox"}); const q=el("div",{class:"qcard"}); b.append(mb,q);
+  const map=buildMap(mb);
+  runQuiz(q,MAPQ.map(m=>({s:m.s,a:m.a,o:MAPQ_OPTS,hl:m.hl,bs:m.bs,tr:m.tr})),
+    gapQuestion(MAPQ_OPTS,{before:item=>{map.clear(); item.hl.forEach(id=>map.mark(id,"hl"));}}));
+}
+
+/* 5 follow the directions */
+{
+  const b=section("follow",["Follow the directions","Prati upute","Yol tarifini takip et","Follow the directions"]);
+  b.append(note(["You are at the yellow dot on Second Avenue, looking up the map (north). Read the directions, then click the building you arrive at. Click a sentence if you need a translation.",
+    "Nalaziš se na žutoj tački u Second Avenue i gledaš prema gore na mapi (sjever). Pročitaj upute, pa klikni na zgradu do koje stigneš. Klikni na rečenicu ako ti treba prijevod.",
+    "Second Avenue'daki sarı noktadasın ve haritada yukarıya (kuzeye) bakıyorsun. Yol tarifini oku, sonra vardığın binaya tıkla. Çeviri gerekirse cümleye tıkla."]));
+  const q=el("div",{class:"qcard"}); const mb=el("div",{class:"mapbox"}); b.append(q,mb);
+  let pick=null;
+  const map=buildMap(mb,{clickable:true,you:true,onPick:id=>pick&&pick(id)});
+  runQuiz(q,FOLLOW,{
+    draw(root,item,answer){
+      map.clear();
+      root.append(el("div",{class:"qtext",text:"Where are you? Click the building on the map."}));
+      root.append(fbLine([null,"Gdje si? Klikni na zgradu na mapi.","Neredesin? Haritadaki binaya tıkla."]));
+      const steps=el("div",{class:"steps"}); item.steps.forEach(k=>steps.append(chip(...P[k]))); root.append(steps);
+      const after=el("div",{class:"after"});
+      root.append(after);
+      let done=false;
+      pick=id=>{
+        if(done) return; done=true;
+        const ok=id===item.a, n=BLD[item.a].n;
+        map.mark(item.a,"ok"); if(!ok) map.mark(id,"no");
+        map.route(item.route);
+        after.append(chip(`It's the ${n[0]}.`,`To je ${n[1]}.`,`Burası ${n[2]}.`));
+        answer(ok);
+      };
+    },
+    onEnd(){ map.clear(); pick=null; }
+  });
+}
+
+/* 6 give directions */
+{
+  const b=section("give",["Give directions","Daj upute","Yol tarifi ver","Give directions"]);
+  b.append(note(["A tourist asks you for help. You are at the yellow dot, looking north. Choose the correct directions. The route appears on the map when you answer.",
+    "Turista te pita za pomoć. Ti si na žutoj tački i gledaš prema sjeveru. Izaberi tačne upute. Put se pojavi na mapi kad odgovoriš.",
+    "Bir turist senden yardım istiyor. Sarı noktadasın ve kuzeye bakıyorsun. Doğru yol tarifini seç. Cevap verince yol haritada görünür."]));
+  const q=el("div",{class:"qcard"}); const mb=el("div",{class:"mapbox"}); b.append(q,mb);
+  const map=buildMap(mb,{you:true});
+  runQuiz(q,GIVE,{
+    draw(root,item,answer){
+      map.clear();
+      const n=BLD[item.a].n;
+      root.append(el("div",{class:"qtext"},[el("span",{text:"Tourist: "}),chip(`Excuse me. Where's the ${n[0]}, please?`,`Izvinite. Gdje je ${n[1]}, molim vas?`,`Affedersiniz. ${capTR(n[2])} nerede, lütfen?`)]));
+      const opts=el("div",{class:"opts stack"}); const after=el("div",{class:"after"});
+      shuffle(item.o.map((keys,idx)=>({keys,correct:idx===0}))).forEach(o=>{
+        const btn=el("button",{class:"opt",type:"button",text:joinP(o.keys,0)});
+        btn.dataset.correct=o.correct;
+        btn.onclick=()=>{
+          opts.querySelectorAll(".opt").forEach(x=>{x.disabled=true; if(x.dataset.correct==="true") x.classList.add("ok");});
+          if(!o.correct) btn.classList.add("no");
+          map.mark(item.a,"ok"); map.route(item.route);
+          after.append(chip(joinP(item.o[0],0),joinP(item.o[0],1),joinP(item.o[0],2)));
+          answer(o.correct);
+        };
+        opts.append(btn);
+      });
+      root.append(opts,after);
+    },
+    onEnd(){ map.clear(); }
+  });
+}
+
+/* 7 complete the dialogue */
+{
+  const b=section("dialogue",["Complete the dialogue","Dopuni dijalog","Diyaloğu tamamla","Dialogue"]);
+  b.append(note(["Choose the missing word for each gap. Then click Check answers. Use the translate button on each line if you need help.",
+    "Izaberi riječ koja nedostaje za svaku prazninu. Zatim klikni Check answers (Provjeri odgovore). Koristi dugme za prijevod pored svake rečenice ako ti treba pomoć.",
+    "Her boşluk için eksik kelimeyi seç. Sonra Check answers (Cevapları kontrol et) düğmesine tıkla. Yardım gerekirse her satırdaki çeviri düğmesini kullan."]));
+  const d=el("div",{class:"sub"}); b.append(d); gapDialog(d,DLG1);
+}
+
+/* 8 word order */
+{
+  const b=section("word-order",["Put the words in order","Poredaj riječi","Kelimeleri sıraya koy","Word order"]);
+  b.append(note(["Click the words in the correct order to make a sentence. Click a word in your sentence to take it back.",
+    "Klikni na riječi pravilnim redom da napraviš rečenicu. Klikni na riječ u svojoj rečenici da je vratiš.",
+    "Cümle kurmak için kelimelere doğru sırayla tıkla. Bir kelimeyi geri almak için cümlendeki kelimeye tıkla."]));
+  const q=el("div",{class:"qcard"}); b.append(q);
+  runQuiz(q,ORDER,{
+    draw(root,item,answer){
+      const tokens=item.en.split(" ").map((w,i)=>({w,i}));
+      let mixed=shuffle(tokens); if(mixed.map(t=>t.w).join(" ")===item.en) mixed=mixed.reverse();
+      const built=el("div",{class:"built","aria-label":"Your sentence"});
+      const pool=el("div",{class:"pool"});
+      const after=el("div",{class:"after"});
+      let chosen=[], locked=false;
+      mixed.forEach(t=>{
+        const w=el("button",{class:"word",type:"button",text:t.w});
+        w.onclick=()=>{
+          if(locked||w.classList.contains("used")) return;
+          w.classList.add("used");
+          const c=el("button",{class:"word",type:"button",text:t.w});
+          c.onclick=()=>{ if(locked) return; c.remove(); w.classList.remove("used"); chosen=chosen.filter(x=>x!==c); };
+          chosen.push(c); built.append(c);
+        };
+        pool.append(w);
+      });
+      const check=el("button",{class:"btn",type:"button",text:"Check"});
+      check.onclick=()=>{
+        if(locked) return;
+        const got=chosen.map(c=>c.textContent).join(" ");
+        if(chosen.length<tokens.length) return;
+        locked=true; check.disabled=true;
+        const ok=got===item.en;
+        built.classList.add(ok?"ok":"no");
+        after.append(chip(item.en,item.bs,item.tr));
+        answer(ok);
+      };
+      root.append(built,pool,el("div",{class:"nav"},[check]),after);
+    }
+  });
+}
+
+/* 9 hotel: there is / there are */
+{
+  const b=section("hotel",["In a hotel room: there is / there are","U hotelskoj sobi: there is / there are","Otel odasında: there is / there are","Hotel room"]);
+  b.append(note(["Learn the hotel words. Click each one to check the translation.","Nauči riječi vezane za hotel. Klikni na svaku da provjeriš prijevod.","Otelle ilgili kelimeleri öğren. Çevirisini kontrol etmek için her birine tıkla."]));
+  const cards=el("div",{class:"cards"});
+  HOTEL.forEach(([i,en,bs,tr])=>cards.append(chip(en,bs,tr,el("span",{class:"pic","aria-hidden":"true",text:i}))));
+  b.append(cards);
+  b.append(explain([
+    ["**There is (There's)** + one thing: There's a TV.","There is (There's) + jedna stvar: There's a TV. (Ima televizor.)","There is (There's) + tek bir şey: There's a TV. (Bir televizyon var.)"],
+    ["**There are** + two or more things: There are two beds.","There are + dvije ili više stvari: There are two beds. (Ima dva kreveta.)","There are + iki veya daha fazla şey: There are two beds. (İki yatak var.)"],
+    ["Negative: There **isn't** a phone. There **aren't any** towels.","Odrično: There isn't a phone. (Nema telefona.) There aren't any towels. (Nema peškira.)","Olumsuz: There isn't a phone. (Telefon yok.) There aren't any towels. (Havlu yok.)"],
+    ["Questions: **Is there** a TV? Yes, there is. / No, there isn't. **Are there any** towels? Yes, there are. / No, there aren't.",
+     "Pitanja: Is there a TV? (Ima li televizor?) Yes, there is. / No, there isn't. Are there any towels? (Ima li peškira?) Yes, there are. / No, there aren't.",
+     "Sorular: Is there a TV? (Televizyon var mı?) Yes, there is. / No, there isn't. Are there any towels? (Havlu var mı?) Yes, there are. / No, there aren't."],
+    ["Use **any** with plural words in negatives and questions: Are there any chairs?","Koristi any s riječima u množini u odričnim rečenicama i pitanjima: Are there any chairs? (Ima li stolica?)","Olumsuz cümlelerde ve sorularda çoğul kelimelerle any kullan: Are there any chairs? (Sandalye var mı?)"]
+  ]));
+  b.append(el("h3",{text:"Choose the correct word"}));
+  b.append(note(["Choose the correct word for each sentence.","Izaberi tačnu riječ za svaku rečenicu.","Her cümle için doğru kelimeyi seç."]));
+  const q=el("div",{class:"qcard"}); b.append(q);
+  runQuiz(q,THERE,gapQuestion(null));
+  b.append(el("h3",{text:"At the hotel reception"}));
+  b.append(note(["Complete the conversation at the hotel. Choose the missing words, then click Check answers.","Dopuni razgovor na recepciji hotela. Izaberi riječi koje nedostaju, pa klikni Check answers.","Otel resepsiyonundaki konuşmayı tamamla. Eksik kelimeleri seç, sonra Check answers düğmesine tıkla."]));
+  const d=el("div",{class:"sub"}); b.append(d); gapDialog(d,DLG2);
+}
+
+/* 10 in / at / on + was / were */
+{
+  const b=section("where-were-you",["Where were you? in / at / on, was / were","Gdje si bio/bila? in / at / on, was / were","Neredeydin? in / at / on, was / were","Where were you?"]);
+  b.append(explain([
+    ["Past of be: I / he / she / it **was**. You / we / they **were**. Negative: **wasn't**, **weren't**.",
+     "Prošlo vrijeme glagola be: I / he / she / it was. You / we / they were. Odrično: wasn't, weren't.",
+     "be fiilinin geçmiş hâli: I / he / she / it was. You / we / they were. Olumsuz: wasn't, weren't."],
+    ["Questions: **Where were** you? **Was** he at home? Yes, he was. / No, he wasn't.",
+     "Pitanja: Where were you? (Gdje si bio/bila?) Was he at home? (Je li on bio kod kuće?) Yes, he was. / No, he wasn't.",
+     "Sorular: Where were you? (Neredeydin?) Was he at home? (Evde miydi?) Yes, he was. / No, he wasn't."],
+    ["**at** + home, work, school, the airport, the gym: I was at home.",
+     "at + home, work, school, the airport, the gym: I was at home. (Bio/bila sam kod kuće.)",
+     "at + home, work, school, the airport, the gym: I was at home. (Evdeydim.)"],
+    ["**in** + rooms, cities, countries, bed, a car, a meeting: in the kitchen, in Chicago, in bed.",
+     "in + prostorije, gradovi, države, bed, a car, a meeting: in the kitchen (u kuhinji), in Chicago, in bed (u krevetu).",
+     "in + odalar, şehirler, ülkeler, bed, a car, a meeting: in the kitchen (mutfakta), in Chicago, in bed (yatakta)."],
+    ["**on** + a bus, a train, a plane, a boat, the street: on a bus.",
+     "on + a bus, a train, a plane, a boat, the street: on a bus (u autobusu).",
+     "on + a bus, a train, a plane, a boat, the street: on a bus (otobüste)."]
+  ]));
+  b.append(el("h3",{text:"in, at or on?"}));
+  b.append(note(["Choose in, at or on for each place. The translation appears when you answer.","Izaberi in, at ili on za svako mjesto. Prijevod se pojavi kad odgovoriš.","Her yer için in, at veya on seç. Cevap verince çeviri görünür."]));
+  const tally=el("div",{class:"tally","aria-live":"polite"});
+  const sorter=el("div",{class:"sorter"});
+  let right=0,done=0;
+  const upd=()=>{ tally.textContent=`Score ${right} / ${SORT.length}`+(done===SORT.length?"  ·  Finished!":""); };
+  function buildSorter(){
+    sorter.innerHTML=""; right=0; done=0; upd();
+    shuffle(SORT).forEach(([ph,a,bs,tr])=>{
+      const row=el("div",{class:"srow"});
+      const ch=el("div",{class:"choices"});
+      ["in","at","on"].forEach(o=>{
+        const btn=el("button",{class:"opt",type:"button",text:o});
+        btn.onclick=()=>{
+          ch.querySelectorAll(".opt").forEach(x=>{x.disabled=true; if(x.textContent===a) x.classList.add("ok");});
+          if(o!==a) btn.classList.add("no"); else right++;
+          done++; row.classList.add("answered"); upd();
+        };
+        ch.append(btn);
+      });
+      row.append(ch,el("span",{class:"phrase",text:ph}),trLines(`${a} ${ph} = ${bs}`,`${a} ${ph} = ${tr}`));
+      sorter.append(row);
+    });
+  }
+  const again=el("button",{class:"btn ghost",type:"button",text:"Start again"});
+  again.onclick=buildSorter;
+  b.append(tally,sorter,el("div",{class:"nav"},[again]));
+  buildSorter();
+  b.append(el("h3",{text:"was or were?"}));
+  b.append(note(["Choose the correct word for each sentence.","Izaberi tačnu riječ za svaku rečenicu.","Her cümle için doğru kelimeyi seç."]));
+  const q=el("div",{class:"qcard"}); b.append(q);
+  runQuiz(q,WAS,gapQuestion(null));
+}
+
+/* 11 your turn */
+{
+  const b=section("your-turn",["Your turn: write directions","Tvoj red: napiši upute","Sıra sende: yol tarifi yaz","Your turn"]);
+  b.append(note(["You are at the yellow dot on the map. Choose a place and write directions to it in your notebook or in the box. Then click Show a model answer and compare.",
+    "Nalaziš se na žutoj tački na mapi. Izaberi mjesto i napiši upute do njega u svesku ili u polje. Zatim klikni Show a model answer (Prikaži primjer odgovora) i uporedi.",
+    "Haritadaki sarı noktadasın. Bir yer seç ve oraya giden yolu defterine ya da kutuya yaz. Sonra Show a model answer (Örnek cevabı göster) düğmesine tıkla ve karşılaştır."]));
+  const MODELS={};
+  FOLLOW.forEach(f=>{ if(!MODELS[f.a]) MODELS[f.a]={steps:f.steps,route:f.route}; });
+  GIVE.forEach(g=>{ if(!MODELS[g.a]) MODELS[g.a]={steps:g.o[0],route:g.route}; });
+  const ids=Object.keys(MODELS).sort((a,c)=>BLD[a].l.localeCompare(BLD[c].l));
+  const sel=el("select",{id:"yt-place"}); ids.forEach(id=>sel.append(el("option",{value:id,text:BLD[id].l})));
+  sel.value="hospital";
+  const ta=el("textarea",{id:"yt-text",placeholder:"Go straight ahead and…"});
+  const show=el("button",{class:"btn",type:"button",text:"Show a model answer"});
+  const model=el("div",{class:"steps"});
+  const mb=el("div",{class:"mapbox"});
+  const bank=el("div",{class:"wordbank"});
+  ["Go straight ahead.","Turn left / right on … Street.","Go past …","It's on the left / right.","next to","across from","between … and …","on the corner of …","It's the first building on the …"].forEach(w=>bank.append(el("span",{text:w})));
+  b.append(el("div",{class:"yt"},[
+    el("label",{for:"yt-place",text:"Choose a place:"}),sel,
+    el("span",{class:"hint",text:"Useful words:"}),bank,
+    el("label",{for:"yt-text",text:"Your directions:"}),ta,
+    el("div",{class:"nav"},[show]),model
+  ]),mb);
+  const map=buildMap(mb,{you:true});
+  const reset=()=>{ model.innerHTML=""; map.clear(); map.mark(sel.value,"hl"); };
+  sel.addEventListener("change",reset);
+  show.onclick=()=>{
+    const m=MODELS[sel.value]; model.innerHTML="";
+    m.steps.forEach(k=>model.append(chip(...P[k])));
+    map.clear(); map.mark(sel.value,"ok"); map.route(m.route);
+  };
+  reset();
+}
+</script>
+</body>
+</html>
